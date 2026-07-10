@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
@@ -23,6 +25,20 @@ public class ScoreManager : MonoBehaviour
             return;
         }
         Instance = this;
+    }
+    void OnEnable()
+    {
+        EventBus.Subscribe<EnemyDiedEvent>(OnEnemyDied);
+    }
+
+    void OnDisable()
+    {
+        EventBus.Unsubscribe<EnemyDiedEvent>(OnEnemyDied);
+    }
+
+    void OnEnemyDied(EnemyDiedEvent e)
+    {
+        Score += e.score;
     }
 
 }

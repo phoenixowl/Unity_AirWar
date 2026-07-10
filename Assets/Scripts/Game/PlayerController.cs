@@ -1,19 +1,32 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SocialPlatforms.Impl;
 
-public class Player : MonoBehaviour
+public class PlayerController : MonoBehaviour
 {
     public int health = 5;
-    public float moveSpeed = 5f; // ÒÆ¶¯ËÙ¶È
-    public float fireInterval = 1.0f;//·¢ÉäËÙ¶È
-    float nextFireTime;
-    [SerializeField] GameObject bulletPrefab;   // ¡û Inspector °Ñ BulletPlayer prefab ÍÏÕâÀï
-    [SerializeField] Transform firePoint;
-    [SerializeField] private Camera mainCamera;
-    private SpriteRenderer spriteRenderer;
+    public float moveSpeed = 5f; // ç§»åŠ¨é€Ÿåº¦
+    public float fireInterval = 1.0f;//å‘å°„é€Ÿåº¦
 
-    void Start()
+    public int damage = 1;
+    public float bulletSpeed = 10.0f;
+
+    public float nextFireTime;
+    public float invicibleTime = 1.0f;
+    public float invicibleTimer = 0f;
+
+    [SerializeField] BulletShooter bulletShooter;
+    [SerializeField] Camera mainCamera;
+    HitFlashController hitFlashController;
+    SpriteRenderer spriteRenderer;
+
+    public bool useMouseControl = true;
+
+    [Tooltip("å½“è·ç¦»é¼ æ ‡Xå°äºæ­¤å€¼æ—¶ï¼Œç›´æ¥è´´åˆåˆ°é¼ æ ‡ä½ç½®")]
+    public float mouseSnapThreshold = 0.05f;
+
+    private void Awake()
     {
         if (mainCamera == null)
             mainCamera = Camera.main;
@@ -21,57 +34,145 @@ public class Player : MonoBehaviour
         if (spriteRenderer == null)
             spriteRenderer = GetComponent<SpriteRenderer>();
 
-        var cfg = ConfigManager.Instance.GameConfig;
+        hitFlashController = GetComponent<HitFlashController>();
+    }
+    void Start()
+    {
+
+        var cfg = ConfigManager.Instance.StatsConfigSO;
         health = cfg.playerHP;
         moveSpeed = cfg.playerMoveSpeed;
-        fireInterval = cfg.fireInterval;
+        damage = cfg.playerBulletDamage;
+        bulletSpeed = cfg.playerBulletSpeed;
+        fireInterval = cfg.playerFireInterval;
+        invicibleTime = cfg.playerInvicibleTime;
     }
 
     void Update()
     {
-        // »ñÈ¡ÊäÈë£¨-1 ~ 1£©
-        float input = Input.GetAxis("Horizontal");
+        if (GameManager.Instance.isGamePausing) return;
 
-        // Ë®Æ½ÒÆ¶¯
-        transform.Translate(Vector3.right * input * moveSpeed * Time.deltaTime);
+        if (useMouseControl)
+        {
+            MoveWithMouse();
+        }
+        else
+        {
+            // åŸæœ‰é”®ç›˜æ§åˆ¶
+            float input = Input.GetAxis("Horizontal");
+            transform.Translate(Vector3.right * input * moveSpeed * Time.deltaTime);
+        }
 
-        // ÆÁÄ»±ß½çÏŞÖÆ
         ClampPositionToScreen();
-        //¹¥»÷
+        //æ”»å‡»
+        TryShoot();
+
+        //æ— æ•Œå¸§
+        if (invicibleTimer > 0f)
+        {
+            invicibleTimer -= Time.deltaTime;
+        }
+    }
+
+    void MoveWithMouse()
+    {
+        if (mainCamera == null || Time.timeScale == 0f)
+            return;
+
+        Vector3 mouseScreenPos = Input.mousePosition;
+        mouseScreenPos.z = Mathf.Abs(mainCamera.transform.position.z - transform.position.z);
+        Vector3 mouseWorldPos = mainCamera.ScreenToWorldPoint(mouseScreenPos);
+
+        float targetX = mouseWorldPos.x;
+        float currentX = transform.position.x;
+        float deltaX = targetX - currentX;
+
+        // âœ… åªç”¨é€Ÿåº¦ï¼Œä¸ç”¨ç¬ç§»
+        float direction = Mathf.Sign(deltaX);
+        float step = moveSpeed * Time.deltaTime;
+
+        // âœ… é™åˆ¶æœ€å¤§æ­¥é•¿ï¼Œé˜²æ­¢è¿‡å†²
+        step = Mathf.Min(step, Mathf.Abs(deltaX));
+
+        transform.Translate(Vector3.right * direction * step);
+    }
+
+
+    // æ”¹è¿›ï¼šæ›´ç²¾ç¡®çš„å±å¹•è¾¹ç•Œé™åˆ¶
+    void ClampPositionToScreen()
+    {
+        if (mainCamera == null || spriteRenderer == null)
+            return;
+
+        // è·å–é£æœºçš„ä¸–ç•Œåæ ‡
+        Vector3 worldPos = transform.position;
+
+        // å°†ä¸–ç•Œåæ ‡è½¬æ¢ä¸ºè§†å£åæ ‡
+        Vector3 viewportPos = mainCamera.WorldToViewportPoint(worldPos);
+
+        // è€ƒè™‘ç²¾çµå®½åº¦çš„ä¸€åŠï¼ˆåœ¨è§†å£åæ ‡ä¸­ï¼‰
+        float halfWidthInViewport = spriteRenderer.bounds.extents.x / (mainCamera.orthographicSize * 2 * mainCamera.aspect);
+
+        // é™åˆ¶Xè½´åœ¨å±å¹•å†…
+        viewportPos.x = Mathf.Clamp(viewportPos.x, halfWidthInViewport, 1f - halfWidthInViewport);
+
+        // è½¬å›ä¸–ç•Œåæ ‡
+        Vector3 clampedWorldPos = mainCamera.ViewportToWorldPoint(viewportPos);
+        clampedWorldPos.y = worldPos.y; // ä¿æŒYè½´ä¸å˜
+        clampedWorldPos.z = worldPos.z; // ä¿æŒZè½´ä¸å˜
+
+        transform.position = clampedWorldPos;
+    }
+
+    void TryShoot()
+    {
         if (Time.time >= nextFireTime)
         {
             if (Input.GetKey(KeyCode.Space))
             {
                 nextFireTime = Time.time + fireInterval;
 
-                GameObject bullet = ObjectPool.Instance.GetBullet();
-                bullet.transform.position = firePoint.position;
-                bullet.transform.rotation = Quaternion.identity;
-
-                bullet.GetComponent<BulletController>().Init();
+                bulletShooter.Shoot(true, damage, bulletSpeed);
             }
         }
     }
 
-    void ClampPositionToScreen()
+    public void TakeDamage(int damage)
     {
-        if (mainCamera == null || spriteRenderer == null)
-            return;
+        if (invicibleTimer > 0) return;
 
-        // ½«ÊÀ½ç×ø±ê×ª»»ÎªÆÁÄ»×ø±ê
-        Vector3 leftEdge = mainCamera.ViewportToWorldPoint(new Vector3(0, 0.5f, 0));
-        Vector3 rightEdge = mainCamera.ViewportToWorldPoint(new Vector3(1, 0.5f, 0));
+        health -= damage;
+        EventBus.Emit(new PlayerHitEvent(health));
 
-        // ¿¼ÂÇ¾«Áé¿í¶ÈµÄÒ»°ë
-        float halfWidth = spriteRenderer.bounds.extents.x;
+        invicibleTimer = invicibleTime;
 
-        // ¼ÆËã¿ÉÒÆ¶¯·¶Î§
-        float minX = leftEdge.x + halfWidth;
-        float maxX = rightEdge.x - halfWidth;
+        hitFlashController.flashDuration = invicibleTime;
+        hitFlashController.Flash();
 
-        // ÏŞÖÆÎ»ÖÃ
-        Vector3 clampedPos = transform.position;
-        clampedPos.x = Mathf.Clamp(clampedPos.x, minX, maxX);
-        transform.position = clampedPos;
+        if (health <= 0)
+        {
+            Die();
+        }
+    }
+
+    void Die()
+    {
+        print("u died");
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Enemy"))
+        {
+            var ec = other.GetComponent<EnemyController>();
+            if (ec != null)
+            {
+                TakeDamage(ec.touchDamage);
+            }
+            else
+            {
+                TakeDamage(0);
+            }
+        }
     }
 }

@@ -7,20 +7,46 @@ using UnityEngine.SceneManagement;
 
 public class EnemyController : MonoBehaviour
 {
-    int hp = 10;
-    int score = 1;
-    float moveSpeed = 2.0f;
-    float invicibleTime = 1.0f;
-    float invicibleTimer = 0f;
+    public int score = 1;
 
+    public int hp = 10;
+    public float moveSpeed = 2.0f;
+    public float fireInterval = 1000;
+    public float nextFireTime = 0;
+    public int touchDamage = 1;
+
+    public int bulletDamage = 1;
+    public float bulletSpeed = 5.0f;
+
+    public float invicibleTime = 1.0f;
+    public float invicibleTimer = 0f;
+
+    [SerializeField] BulletShooter bulletShooter;
+    [SerializeField] GameObject outlineChildItem;
     HitFlashController hitFlashController;
 
-    public void Init(int hp, int score, float speed, float invicibleTime)
+    public void Init(int score,int hp, float moveSpeed, float fireInterval, int touchDamage, int bulletDamage, float bulletSpeed, float invicibleTime, bool isElite)
     {
-        this.hp = hp;
         this.score = score;
-        this.moveSpeed = speed;
+        this.hp = hp;
+        this.fireInterval = fireInterval;
+        this.moveSpeed = moveSpeed;
+        this.touchDamage = touchDamage;
+        this.bulletDamage = bulletDamage;
         this.invicibleTime = invicibleTime;
+        if (isElite)
+        {
+            this.hp *= 2;
+            this.moveSpeed *= 0.6f;
+            this.touchDamage += 1;
+            this.fireInterval = 3.0f;
+            outlineChildItem.SetActive(true);
+        }
+        else
+        {
+            outlineChildItem.SetActive(false);
+        }
+        nextFireTime = Time.time + this.fireInterval;
     }
 
     void Awake()
@@ -28,13 +54,25 @@ public class EnemyController : MonoBehaviour
         hitFlashController = GetComponent<HitFlashController>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         transform.Translate(Vector3.down * moveSpeed * Time.deltaTime);
+
+        TryShoot();
+
         if (invicibleTimer > 0f)
         {
             invicibleTimer -= Time.deltaTime;
+        }
+    }
+
+    void TryShoot()
+    {
+        if (Time.time >= nextFireTime)
+        {
+           nextFireTime = Time.time + fireInterval;
+
+           bulletShooter.Shoot(false, bulletDamage, bulletSpeed);
         }
     }
 
@@ -56,7 +94,7 @@ public class EnemyController : MonoBehaviour
 
     void Die()
     {
-        ScoreManager.Instance.Score += score;
+        EventBus.Emit(new EnemyDiedEvent(score));
 
         ReturnToPool();
     }

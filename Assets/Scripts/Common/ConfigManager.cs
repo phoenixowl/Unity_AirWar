@@ -4,9 +4,9 @@ public class ConfigManager : MonoBehaviour
 {
     public static ConfigManager Instance { get; private set; }
 
-    [SerializeField] GameConfigSO gameConfig;
+    [SerializeField] StatsConfigSO statsConfigSO;
 
-    public GameConfigSO GameConfig => gameConfig;
+    public StatsConfigSO StatsConfigSO => statsConfigSO;
 
     void Awake()
     {

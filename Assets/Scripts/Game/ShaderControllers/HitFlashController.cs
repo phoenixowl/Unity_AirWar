@@ -6,13 +6,13 @@ public class HitFlashController : MonoBehaviour
 {
     public float flashDuration = 0.08f;
 
-    private SpriteRenderer sr;
+    private Renderer rend;
     private MaterialPropertyBlock block;
     private Coroutine flashRoutine;
 
     void Awake()
     {
-        sr = GetComponent<SpriteRenderer>();
+        rend = GetComponent<Renderer>();
         block = new MaterialPropertyBlock();
     }
 
@@ -41,22 +41,22 @@ public class HitFlashController : MonoBehaviour
     }
     public void ResetFlash()
     {
-        if (sr == null) return;
+        if (rend == null) return;
 
         // 停止可能存在的闪烁协程（防止 Lerp 继续写值）
         StopAllCoroutines();
 
         // 取 → 改 → 还
-        sr.GetPropertyBlock(block);
+        rend.GetPropertyBlock(block);
         block.SetFloat("_FlashAmount", 0f);
-        sr.SetPropertyBlock(block);
+        rend.SetPropertyBlock(block);
     }
 
     void SetFlashAmount(float value)
     {
-        sr.GetPropertyBlock(block);
+        rend.GetPropertyBlock(block);
         block.SetFloat("_FlashAmount", value);
-        sr.SetPropertyBlock(block);
+        rend.SetPropertyBlock(block);
     }
     void OnDisable()
     {

@@ -16,8 +16,8 @@ public class EnemySpawnArea : MonoBehaviour
     {
         Bounds bounds = box.bounds;
 
-        float x = Random.Range(bounds.min.x, bounds.max.x);
-        float y = Random.Range(bounds.min.y, bounds.max.y);
+        float x = UnityEngine.Random.Range(bounds.min.x, bounds.max.x);
+        float y = UnityEngine.Random.Range(bounds.min.y, bounds.max.y);
 
         return new Vector3(x, y, 0f);
     }
