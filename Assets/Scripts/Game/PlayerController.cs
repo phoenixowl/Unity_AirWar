@@ -157,22 +157,6 @@ public class PlayerController : MonoBehaviour
 
     void Die()
     {
-        print("u died");
-    }
-
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Enemy"))
-        {
-            var ec = other.GetComponent<EnemyController>();
-            if (ec != null)
-            {
-                TakeDamage(ec.touchDamage);
-            }
-            else
-            {
-                TakeDamage(0);
-            }
-        }
+        EventBus.Emit(new GameOverEvent(false));
     }
 }

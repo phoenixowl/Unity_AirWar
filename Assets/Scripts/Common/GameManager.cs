@@ -38,18 +38,31 @@ public class GameManager : MonoBehaviour
         }
         Instance = this;
     }
+
+    private void Start()
+    {
+        isGamePausing = false;
+    }
+
     void OnEnable()
     {
         EventBus.Subscribe<GamePauseEvent>(OnGamePaused);
+        EventBus.Subscribe<GameOverEvent>(OnGameOver);
     }
 
     void OnDisable()
     {
         EventBus.Unsubscribe<GamePauseEvent>(OnGamePaused);
+        EventBus.Unsubscribe<GameOverEvent>(OnGameOver);
     }
 
     void OnGamePaused(GamePauseEvent e)
     {
         isGamePausing = e.pause;
+    }
+
+    void OnGameOver(GameOverEvent e)
+    {
+        isGamePausing = true;
     }
 }

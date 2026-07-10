@@ -36,10 +36,6 @@ public class EnemyController : MonoBehaviour
         this.invicibleTime = invicibleTime;
         if (isElite)
         {
-            this.hp *= 2;
-            this.moveSpeed *= 0.6f;
-            this.touchDamage += 1;
-            this.fireInterval = 3.0f;
             outlineChildItem.SetActive(true);
         }
         else
@@ -111,6 +107,14 @@ public class EnemyController : MonoBehaviour
         if (other.CompareTag("DownWall"))
         {
             ReturnToPool();
+        }
+        if (other.CompareTag("Player"))
+        {
+            PlayerController player = other.GetComponent<PlayerController>();
+            if (player != null)
+            {
+                player.TakeDamage(touchDamage);
+            }
         }
     }
 }  

@@ -7,15 +7,4 @@ public class SceneChanger : MonoBehaviour
     {
         SceneManager.LoadScene("GameScene");
     }
-
-    public void BackToTitle()
-    {
-        SceneManager.LoadScene("StartMenuScene");
-    }
-
-    // 重开当前场景（GameOver 时可用）
-    public void Retry()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
 }

@@ -40,6 +40,10 @@ public class GameStateManager : MonoBehaviour
     private void Update()
     {
         gameState += GameSpeed * Time.deltaTime;
+        if(gameState > ConfigManager.Instance.StatsConfigSO.expectedGameTime)
+        {
+            EventBus.Emit(new GameOverEvent(true));
+        }
         _textMeshPro.text = "GameSpeed: " + Convert.ToString(GameSpeed) + " GameState : " + Convert.ToString(gameState);
     }
     void OnEnable()

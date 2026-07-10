@@ -5,7 +5,7 @@ public class BulletController : MonoBehaviour
 {
     public float speed = 10f;
     public int damage = 3;
-    bool isPlayerBullet = true;
+    public bool isPlayerBullet = true;
 
     public void Init(int damage, float speed, bool isPlayerBullet)
     {

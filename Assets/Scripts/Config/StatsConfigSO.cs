@@ -15,14 +15,22 @@ public class StatsConfigSO : ScriptableObject
     public float enemyMoveSpeed = 2f;
     public float enemyFireInterval = 9999f;
     public int enemyTouchDamage = 1;
-    public float enemySpawnInterval = 1.5f;
-    public float enemyInvicibleTime = 0.2f;
     public int enemyBulletDamage = 1;
     public float enemyBulletSpeed = 3.0f;
 
+    public int eliteEnemyHP = 15;
+    public float eliteEnemyMoveSpeed = 1f;
+    public float eliteEnemyFireInterval = 3.0f;
+    public int eliteEnemyTouchDamage = 1;
+    public int eliteEnemyBulletDamage = 1;
+    public float eliteEnemyBulletSpeed = 3.0f;
+
     public int scoreEnemy = 100;
+    public int scoreEliteEnemy = 300;
 
     public float eliteEnemyRate = 0.05f;
+    public float enemySpawnInterval = 1.5f;
+    public float enemyInvicibleTime = 0.2f;
 
     public float expectedGameTime = 180f;
 }

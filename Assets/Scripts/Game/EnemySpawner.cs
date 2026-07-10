@@ -67,12 +67,12 @@ public class EnemySpawner : MonoBehaviour
         }
             enemy.GetComponent<EnemyController>().Init(
                 Convert.ToInt32(cfg.scoreEnemy * GameStateManager.Instance.GameSpeed),
-                cfg.enemyHP,
-                cfg.enemyMoveSpeed,
-                cfg.enemyFireInterval,
-                cfg.enemyTouchDamage,
-                cfg.enemyBulletDamage,
-                cfg.enemyBulletSpeed,
+                isElite? cfg.eliteEnemyHP : cfg.enemyHP,
+                isElite ? cfg.eliteEnemyMoveSpeed : cfg.enemyMoveSpeed,
+                isElite ? cfg.eliteEnemyFireInterval : cfg.enemyFireInterval,
+                isElite ? cfg.eliteEnemyTouchDamage : cfg.enemyTouchDamage,
+                isElite ? cfg.eliteEnemyBulletDamage : cfg.enemyBulletDamage,
+                isElite ? cfg.eliteEnemyBulletSpeed : cfg.enemyBulletSpeed,
                 cfg.enemyInvicibleTime,
                 isElite
 
