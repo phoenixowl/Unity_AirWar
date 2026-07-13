@@ -9,9 +9,7 @@ public class EnemySpawnArea : MonoBehaviour
         box = GetComponent<BoxCollider2D>();
     }
 
-    /// <summary>
     /// 在区域内随机返回一个世界坐标
-    /// </summary>
     public Vector3 GetRandomPoint()
     {
         Bounds bounds = box.bounds;

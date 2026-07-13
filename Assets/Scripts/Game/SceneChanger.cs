@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // ← 必须引这个
+using UnityEngine.SceneManagement;
 
 public class SceneChanger : MonoBehaviour
 {

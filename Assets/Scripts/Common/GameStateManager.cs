@@ -6,7 +6,6 @@ using UnityEngine.SocialPlatforms.Impl;
 public class GameStateManager : MonoBehaviour
 {
     public static GameStateManager Instance { get; private set; }
-    [SerializeField] TextMeshProUGUI _textMeshPro;
 
    public float gameState = 0;
 
@@ -44,7 +43,6 @@ public class GameStateManager : MonoBehaviour
         {
             EventBus.Emit(new GameOverEvent(true));
         }
-        _textMeshPro.text = "GameSpeed: " + Convert.ToString(GameSpeed) + " GameState : " + Convert.ToString(gameState);
     }
     void OnEnable()
     {

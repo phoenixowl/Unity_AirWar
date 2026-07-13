@@ -198,6 +198,7 @@ MonoBehaviour:
   invicibleTimer: 0
   bulletShooter: {fileID: 6704848083220353610}
   outlineChildItem: {fileID: 750043277032841426}
+  deathExplosion: {fileID: 0}
 --- !u!50 &3339598604084353785
 Rigidbody2D:
   serializedVersion: 4

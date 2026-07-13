@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerHP: 3
   playerMoveSpeed: 6
-  playerFireInterval: 0.2
+  playerFireInterval: 0.5
   playerInvicibleTime: 0.5
   playerBulletDamage: 5
   playerBulletSpeed: 10
@@ -22,10 +22,22 @@ MonoBehaviour:
   enemyMoveSpeed: 2
   enemyFireInterval: 9999
   enemyTouchDamage: 1
-  enemySpawnInterval: 1.5
-  enemyInvicibleTime: 0.5
   enemyBulletDamage: 1
   enemyBulletSpeed: 3
+  eliteEnemyHP: 15
+  eliteEnemyMoveSpeed: 1
+  eliteEnemyFireInterval: 3
+  eliteEnemyTouchDamage: 1
+  eliteEnemyBulletDamage: 1
+  eliteEnemyBulletSpeed: 3
+  itemMoveSpeed: 5
+  itemHeal: 1
+  itemScore: 300
+  itemShotSpeed: 0.05
   scoreEnemy: 100
+  scoreEliteEnemy: 300
   eliteEnemyRate: 0.67
+  enemySpawnInterval: 1.5
+  enemyInvicibleTime: 0.2
+  itemSpawnInterval: 10
   expectedGameTime: 180

@@ -7,22 +7,23 @@ public class ObjectPool : MonoBehaviour
     public static ObjectPool Instance { get; private set; }
 
     // ===== Inspector 配置 =====
-    [Header("子弹池")]
     [SerializeField] GameObject bulletPrefab;
     [SerializeField] int bulletPoolSize = 30;
 
-    [Header("普通敌机池")]
     [SerializeField] GameObject enemyNormalPrefab;
     [SerializeField] int enemyNormalPoolSize = 20;
 
-    [Header("精英敌机池")]
-    [SerializeField] GameObject enemyElitePrefab;
-    [SerializeField] int enemyElitePoolSize = 10;
+    [SerializeField] GameObject itemPrefab;
+    [SerializeField] int itemPoolSize = 10;
+
+    [SerializeField] GameObject explosionParticlePrefab;
+    [SerializeField] int explosionParticlePoolSize = 5;
 
     // ===== 内部池 =====
     private Queue<GameObject> bulletPool = new();
     private Queue<GameObject> enemyNormalPool = new();
-    private Queue<GameObject> enemyElitePool = new();
+    private Queue<GameObject> itemPool = new();
+    private Queue<GameObject> explosionParticlePool = new();
 
     void Awake()
     {
@@ -36,8 +37,9 @@ public class ObjectPool : MonoBehaviour
 
         // 预加载
         Prewarm(bulletPrefab, bulletPool, bulletPoolSize);
-        //Prewarm(enemyNormalPrefab, enemyNormalPool, enemyNormalPoolSize);
-        //Prewarm(enemyElitePrefab, enemyElitePool, enemyElitePoolSize);
+        Prewarm(enemyNormalPrefab, enemyNormalPool, enemyNormalPoolSize);
+        Prewarm(itemPrefab, itemPool, itemPoolSize);
+        Prewarm(explosionParticlePrefab, explosionParticlePool, explosionParticlePoolSize);
     }
 
     /// <summary>
@@ -75,14 +77,23 @@ public class ObjectPool : MonoBehaviour
         ReturnToPool(obj, enemyNormalPool);
     }
 
-    public GameObject GetEnemyElite()
+    public GameObject GetItem()
     {
-        return GetFromPool(enemyElitePrefab, enemyElitePool);
+        return GetFromPool(itemPrefab, itemPool);
     }
 
-    public void ReturnEnemyElite(GameObject obj)
+    public void ReturnItem(GameObject obj)
     {
-        ReturnToPool(obj, enemyElitePool);
+        ReturnToPool(obj, itemPool);
+    }
+    public GameObject GetExplosionParticle()
+    {
+        return GetFromPool(explosionParticlePrefab, explosionParticlePool);
+    }
+
+    public void ReturnExplosionParticle(GameObject obj)
+    {
+        ReturnToPool(obj, explosionParticlePool);
     }
 
     // ================= 内部逻辑 =================
