@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting.FullSerializer;
 using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -22,8 +23,11 @@ public class EnemyController : MonoBehaviour
     public float invicibleTimer = 0f;
 
     [SerializeField] BulletShooter bulletShooter;
-    [SerializeField] GameObject outlineChildItem;
     [SerializeField] ParticleSystem deathExplosion;
+    [SerializeField] Sprite normalEnemySprite;
+    [SerializeField] Sprite eliteEnemySprite;
+    [SerializeField] SpriteRenderer sr;
+    [SerializeField] BoxCollider2D collider;
     HitFlashController hitFlashController;
 
     public void Init(int score,int hp, float moveSpeed, float fireInterval, int touchDamage, int bulletDamage, float bulletSpeed, float invicibleTime, bool isElite)
@@ -37,11 +41,15 @@ public class EnemyController : MonoBehaviour
         this.invicibleTime = invicibleTime;
         if (isElite)
         {
-            outlineChildItem.SetActive(true);
+            sr.sprite = eliteEnemySprite;
+            transform.localScale = Vector3.one;
+            collider.size = new Vector2(0.77f, 0.98f);
         }
         else
         {
-            outlineChildItem.SetActive(false);
+            sr.sprite= normalEnemySprite;
+            transform.localScale = Vector3.one * 1.25f;
+            collider.size = new Vector2(0.64f, 0.45f);
         }
         nextFireTime = Time.time + this.fireInterval;
     }
