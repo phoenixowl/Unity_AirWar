@@ -90,11 +90,11 @@ public class PlayerController : MonoBehaviour
         float currentX = transform.position.x;
         float deltaX = targetX - currentX;
 
-        // ✅ 只用速度，不用瞬移
+        //只用速度，不用瞬移
         float direction = Mathf.Sign(deltaX);
         float step = moveSpeed * Time.deltaTime;
 
-        // ✅ 限制最大步长，防止过冲
+        //限制最大步长，防止过冲
         step = Mathf.Min(step, Mathf.Abs(deltaX));
 
         transform.Translate(Vector3.right * direction * step);
