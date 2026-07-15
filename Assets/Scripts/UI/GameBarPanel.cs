@@ -12,10 +12,24 @@ public class GameBarPanel : MonoBehaviour
     [SerializeField] Text gameText;
     [SerializeField] Slider gameProgressSlider;
     [SerializeField] Button pauseButton;
+    [SerializeField] Transform buttomLayoutGroup;
+    private List<Image> cachedHearts = new List<Image>();
 
     void Start()
     {
         pauseButton?.onClick.AddListener(() => EventBus.Emit(new GamePauseEvent(!GameManager.Instance.isGamePausing)));
+
+        // 初始化时缓存所有Heart Image
+        foreach (Transform child in buttomLayoutGroup)
+        {
+            if (child.CompareTag("Heart") && child.TryGetComponent<Image>(out var img))
+            {
+                cachedHearts.Add(img);
+            }
+        }
+        // 按Hierarchy顺序排序
+        cachedHearts.Sort((a, b) => a.transform.GetSiblingIndex().CompareTo(b.transform.GetSiblingIndex()));
+        UpdateHearts(ConfigManager.Instance.StatsConfigSO.playerHP);
     }
 
     void OnEnable()
@@ -27,7 +41,10 @@ public class GameBarPanel : MonoBehaviour
 
     void Update()
     {
-        gameText.text = "GameSpeed: " + Convert.ToString(GameStateManager.Instance.GameSpeed) + " GameState : " + Convert.ToString(GameStateManager.Instance.gameState);
+        //gameText.text = "GameSpeed: " + Convert.ToString(GameStateManager.Instance.GameSpeed) + " GameState : " + Convert.ToString(GameStateManager.Instance.gameState);
+        if (Input.GetKeyDown(KeyCode.Escape)){
+            EventBus.Emit(new GamePauseEvent(!GameManager.Instance.isGamePausing));
+        }
         gameProgressSlider.value = GameStateManager.Instance.gameState / ConfigManager.Instance.StatsConfigSO.expectedGameTime;
     }
 
@@ -41,25 +58,11 @@ public class GameBarPanel : MonoBehaviour
 
     void OnPlayerHit(PlayerHitEvent e)
     {
-        if (healthText != null)
-        {
-            healthText.text = "  生命值：";
-            for (int i = 0; i < e.value; i++)
-            {
-                healthText.text += "█";
-            }
-        }
+        UpdateHearts(e.value);
     }
     void OnPlayerHeal(PlayerHealEvent e)
     {
-        if (healthText != null)
-        {
-            healthText.text = "  生命值：";
-            for (int i = 0; i < e.value; i++)
-            {
-                healthText.text += "█";
-            }
-        }
+        UpdateHearts(e.value);
     }
     void OnScoreChanged(ScoreChangedEvent e)
     {
@@ -67,6 +70,13 @@ public class GameBarPanel : MonoBehaviour
         {
 
             scoreText.text = "Socre:" + Convert.ToString(e.value);
+        }
+    }
+    public void UpdateHearts(int health)
+    {
+        for (int i = 0; i < cachedHearts.Count; i++)
+        {
+            cachedHearts[i].enabled = i < Mathf.Clamp(health, 0, cachedHearts.Count);
         }
     }
 }

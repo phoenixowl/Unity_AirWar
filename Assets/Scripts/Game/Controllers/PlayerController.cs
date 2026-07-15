@@ -6,24 +6,23 @@ using UnityEngine.SocialPlatforms.Impl;
 public class PlayerController : MonoBehaviour
 {
     public int health = 5;
-    public float moveSpeed = 5f; // 移动速度
-    public float fireInterval = 1.0f;//发射速度
-
+    public float moveSpeed = 5f;
+    public float fireInterval = 1.0f;
     public int damage = 1;
     public float bulletSpeed = 10.0f;
-
     public float nextFireTime;
     public float invicibleTime = 1.0f;
     public float invicibleTimer = 0f;
 
+    [SerializeField] BoxCollider2D movementBoundsArea;
     [SerializeField] BulletShooter bulletShooter;
     [SerializeField] Camera mainCamera;
     HitFlashController hitFlashController;
     SpriteRenderer spriteRenderer;
+    Collider2D playerCollider; // 缓存玩家自身的碰撞体，用于精确计算边界
 
     public bool useMouseControl = true;
     public bool useAutoFire = true;
-
     [Tooltip("当距离鼠标X小于此值时，直接贴合到鼠标位置")]
     public float mouseSnapThreshold = 0.05f;
 
@@ -32,14 +31,17 @@ public class PlayerController : MonoBehaviour
         if (mainCamera == null)
             mainCamera = Camera.main;
 
-        if (spriteRenderer == null)
-            spriteRenderer = GetComponent<SpriteRenderer>();
-
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        playerCollider = GetComponent<Collider2D>(); // 获取玩家自身碰撞体
         hitFlashController = GetComponent<HitFlashController>();
+
+        // 未赋值移动区域Collider的警告
+        if (movementBoundsArea == null)
+            Debug.LogWarning("PlayerController: 未赋值移动区域Collider");
     }
+
     void Start()
     {
-
         var cfg = ConfigManager.Instance.StatsConfigSO;
         health = cfg.playerHP;
         moveSpeed = cfg.playerMoveSpeed;
@@ -55,28 +57,48 @@ public class PlayerController : MonoBehaviour
     {
         if (GameManager.Instance.isGamePausing) return;
 
+        // 移动逻辑（二选一，根据useMouseControl切换）
         if (useMouseControl)
         {
             MoveWithMouse();
         }
         else
         {
-            // 原有键盘控制
-            float input = Input.GetAxis("Horizontal");
-            transform.Translate(Vector3.right * input * moveSpeed * Time.deltaTime);
+            MoveWithKeyboard(); // 键盘上下左右移动
         }
 
-        ClampPositionToScreen();
-        //攻击
+        // 核心：用移动区域限制位置（替代原来的屏幕边界限制）
+        ClampPositionToBounds();
+
+        // 攻击
         TryShoot();
 
-        //无敌帧
+        // 无敌帧倒计时
         if (invicibleTimer > 0f)
         {
             invicibleTimer -= Time.deltaTime;
         }
     }
 
+    /// <summary>
+    /// 键盘控制：支持WASD/方向键上下左右移动
+    /// </summary>
+    void MoveWithKeyboard()
+    {
+        float horizontal = Input.GetAxis("Horizontal"); // 左右轴
+        float vertical = Input.GetAxis("Vertical");     // 上下轴（新增）
+
+        Vector2 moveDir = new Vector2(horizontal, vertical);
+        // 归一化方向，防止斜向移动速度比单向快√2倍
+        if (moveDir.magnitude > 1f)
+            moveDir.Normalize();
+
+        transform.Translate(moveDir * moveSpeed * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// 鼠标控制：平滑跟随鼠标位置（支持XY轴）
+    /// </summary>
     void MoveWithMouse()
     {
         if (mainCamera == null || Time.timeScale == 0f)
@@ -86,46 +108,54 @@ public class PlayerController : MonoBehaviour
         mouseScreenPos.z = Mathf.Abs(mainCamera.transform.position.z - transform.position.z);
         Vector3 mouseWorldPos = mainCamera.ScreenToWorldPoint(mouseScreenPos);
 
-        float targetX = mouseWorldPos.x;
-        float currentX = transform.position.x;
-        float deltaX = targetX - currentX;
+        // X轴移动（原有逻辑保留）
+        float deltaX = mouseWorldPos.x - transform.position.x;
+        float stepX = Mathf.Min(Mathf.Abs(deltaX), moveSpeed * Time.deltaTime) * Mathf.Sign(deltaX);
 
-        //只用速度，不用瞬移
-        float direction = Mathf.Sign(deltaX);
-        float step = moveSpeed * Time.deltaTime;
+        // Y轴移动（新增，和X轴逻辑完全一致，保证手感统一）
+        float deltaY = mouseWorldPos.y - transform.position.y;
+        float stepY = Mathf.Min(Mathf.Abs(deltaY), moveSpeed * Time.deltaTime) * Mathf.Sign(deltaY);
 
-        //限制最大步长，防止过冲
-        step = Mathf.Min(step, Mathf.Abs(deltaX));
-
-        transform.Translate(Vector3.right * direction * step);
+        transform.Translate(new Vector3(stepX, stepY, 0f));
     }
 
-
-    void ClampPositionToScreen()
+    /// <summary>
+    /// 用场景中的BoxCollider2D限制玩家位置，确保玩家完全在区域内
+    /// </summary>
+    void ClampPositionToBounds()
     {
-        if (mainCamera == null || spriteRenderer == null)
+        // 未赋值移动区域Collider时，回退到原来的屏幕边界限制
+        if (movementBoundsArea == null)
+        {
             return;
+        }
 
-        // 获取飞机的世界坐标
-        Vector3 worldPos = transform.position;
+        // 获取移动区域的边界（世界坐标，每帧获取以支持动态移动的区域）
+        Bounds bounds = movementBoundsArea.bounds;
 
-        // 将世界坐标转换为视口坐标
-        Vector3 viewportPos = mainCamera.WorldToViewportPoint(worldPos);
+        // 获取玩家自身的半尺寸（优先用碰撞体，没有则用渲染体，确保边界精确）
+        Vector2 playerHalfSize = Vector2.zero;
+        if (playerCollider != null)
+        {
+            playerHalfSize = playerCollider.bounds.extents; // extents是一半的尺寸
+        }
+        else if (spriteRenderer != null)
+        {
+            playerHalfSize = spriteRenderer.bounds.extents;
+        }
 
-        // 考虑精灵宽度的一半（在视口坐标中）
-        float halfWidthInViewport = spriteRenderer.bounds.extents.x / (mainCamera.orthographicSize * 2 * mainCamera.aspect);
+        // 计算可移动的有效范围（减去玩家半尺寸，防止玩家半边身子伸出边界）
+        float minX = bounds.min.x + playerHalfSize.x;
+        float maxX = bounds.max.x - playerHalfSize.x;
+        float minY = bounds.min.y + playerHalfSize.y;
+        float maxY = bounds.max.y - playerHalfSize.y;
 
-        // 限制X轴在屏幕内
-        viewportPos.x = Mathf.Clamp(viewportPos.x, halfWidthInViewport, 1f - halfWidthInViewport);
-
-        // 转回世界坐标
-        Vector3 clampedWorldPos = mainCamera.ViewportToWorldPoint(viewportPos);
-        clampedWorldPos.y = worldPos.y; // 保持Y轴不变
-        clampedWorldPos.z = worldPos.z; // 保持Z轴不变
-
-        transform.position = clampedWorldPos;
+        // 限制玩家位置
+        Vector3 pos = transform.position;
+        pos.x = Mathf.Clamp(pos.x, minX, maxX);
+        pos.y = Mathf.Clamp(pos.y, minY, maxY);
+        transform.position = pos;
     }
-
     void TryShoot()
     {
         if (Time.time >= nextFireTime)
@@ -133,7 +163,6 @@ public class PlayerController : MonoBehaviour
             if (Input.GetKey(KeyCode.Space) || useAutoFire)
             {
                 nextFireTime = Time.time + Mathf.Clamp(fireInterval, 0.01f, 10.0f);
-
                 bulletShooter.Shoot(true, damage, bulletSpeed);
             }
         }
@@ -147,7 +176,6 @@ public class PlayerController : MonoBehaviour
         EventBus.Emit(new PlayerHitEvent(health));
 
         invicibleTimer = invicibleTime;
-
         hitFlashController.flashDuration = invicibleTime;
         hitFlashController.Flash();
 
@@ -160,11 +188,10 @@ public class PlayerController : MonoBehaviour
     public void Heal(int amount)
     {
         health += amount;
-        if (health > 10){
-            health = 10;
-        }
+        if (health > 10) health = 10;
         EventBus.Emit(new PlayerHealEvent(health));
     }
+
     void Die()
     {
         EventBus.Emit(new GameOverEvent(false));
